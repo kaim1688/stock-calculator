@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>股票損益計算機</title>
+<style>
+body {
+  font-family: Arial;
+  background: #f5f6fa;
+  padding: 20px;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+h2 {
+  margin-bottom: 20px;
+}
+
+input, select {
+  padding: 8px;
+  margin: 5px 0;
+  width: 100%;
+}
+
+button {
+  padding: 10px;
+  background: #2f80ed;
+  color: white;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 10px;
+}
+
+table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+}
+
+td, th {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+
+.profit { color: red; }
+.loss { color: green; }
+
+.highlight {
+  background: yellow;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+<h2>📊 股票損益計算機</h2>
+
+<label>買入價格</label>
+<input id="buy" value="982">
+
+<label>股數</label>
+<input id="qty" value="1000">
+
+<label>手續費折數 (例如 0.28)</label>
+<input id="discount" value="0.28">
+
+<label>交易類型</label>
+<select id="type">
+  <option value="stock">現股 (0.3%)</option>
+  <option value="etf">ETF (0.1%)</option>
+  <option value="day">當沖 (0.15%)</option>
+</select>
+
+<button onclick="calculate()">計算</button>
+
+<table id="resultTable">
+<thead>
+<tr>
+<th>賣出價</th>
+<th>損益</th>
+<th>報酬率</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+</div>
+
+<script>
+function getTaxRate(type) {
+  if (type === "etf") return 0.001;
+  if (type === "day") return 0.0015;
+  return 0.003;
+}
+
+function calculate() {
+  let buy = parseFloat(document.getElementById("buy").value);
+  let qty = parseInt(document.getElementById("qty").value);
+  let discount = parseFloat(document.getElementById("discount").value);
+  let type = document.getElementById("type").value;
+
+  let feeRate = 0.001425 * discount;
+  let taxRate = getTaxRate(type);
+
+  let table = document.querySelector("#resultTable tbody");
+  table.innerHTML = "";
+
+  let breakevenFound = false;
+
+  for (let i = -5; i <= 5; i++) {
+    let sell = buy + i;
+
+    let buyCost = buy * qty * (1 + feeRate);
+    let sellIncome = sell * qty * (1 - feeRate - taxRate);
+
+    let profit = sellIncome - buyCost;
+    let roi = (profit / buyCost) * 100;
+
+    let row = document.createElement("tr");
+
+    if (!breakevenFound && profit >= 0) {
+      row.classList.add("highlight");
+      breakevenFound = true;
+    }
+
+    row.innerHTML = `
+      <td>${sell.toFixed(1)}</td>
+      <td class="${profit >= 0 ? 'profit' : 'loss'}">
+        ${profit.toFixed(0)} 元
+      </td>
+      <td class="${profit >= 0 ? 'profit' : 'loss'}">
+        ${roi.toFixed(2)}%
+      </td>
+    `;
+
+    table.appendChild(row);
+  }
+}
+</script>
+
+</body>
+</html>
