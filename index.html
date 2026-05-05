@@ -2,6 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>股票損益計算機</title>
 
 <style>
@@ -23,51 +24,67 @@ body {
   font-family: Arial;
   background: var(--bg);
   color: var(--text);
-  padding: 20px;
+  margin: 0;
 }
 
 .container {
   max-width: 900px;
   margin: auto;
+  padding: 15px;
+}
+
+.card {
   background: var(--card);
-  padding: 20px;
+  padding: 15px;
   border-radius: 10px;
 }
 
+h2 {
+  font-size: 22px;
+}
+
 input, select {
-  padding: 8px;
-  margin: 5px 0;
+  padding: 12px;
+  margin: 6px 0;
   width: 100%;
   background: var(--input);
   color: var(--text);
   border: 1px solid #ccc;
+  border-radius: 6px;
 }
 
 button {
-  padding: 10px;
+  padding: 14px;
   background: #2f80ed;
   color: white;
   border: none;
-  cursor: pointer;
   width: 100%;
   margin-top: 10px;
+  border-radius: 6px;
+  font-size: 16px;
 }
 
 .toggle-btn {
-  margin-bottom: 10px;
   background: #444;
+  margin-bottom: 10px;
+}
+
+/* 表格 */
+.table-wrap {
+  overflow-x: auto;
 }
 
 table {
   width: 100%;
-  margin-top: 20px;
   border-collapse: collapse;
+  min-width: 400px;
 }
 
 td, th {
   border: 1px solid #aaa;
   padding: 8px;
   text-align: center;
+  font-size: 14px;
 }
 
 .profit { color: red; }
@@ -77,6 +94,27 @@ td, th {
   background: yellow;
   color: black;
 }
+
+/* 📱 手機優化 */
+@media (max-width: 600px) {
+
+  h2 {
+    font-size: 18px;
+  }
+
+  input, select {
+    font-size: 16px;
+  }
+
+  button {
+    font-size: 18px;
+  }
+
+  td, th {
+    font-size: 13px;
+    padding: 6px;
+  }
+}
 </style>
 </head>
 
@@ -84,7 +122,9 @@ td, th {
 
 <div class="container">
 
-<button class="toggle-btn" onclick="toggleTheme()">🌙 切換深色 / 淺色</button>
+<div class="card">
+
+<button class="toggle-btn" onclick="toggleTheme()">🌙 深色 / 淺色</button>
 
 <h2>📊 股票損益計算機</h2>
 
@@ -104,11 +144,16 @@ td, th {
   <option value="day">當沖 (0.15%)</option>
 </select>
 
-<label>顯示筆數（例如 20）</label>
+<label>顯示筆數</label>
 <input id="range" value="20">
 
 <button onclick="calculate()">計算</button>
 
+</div>
+
+<div class="card" style="margin-top:15px;">
+
+<div class="table-wrap">
 <table>
 <thead>
 <tr>
@@ -119,23 +164,23 @@ td, th {
 </thead>
 <tbody id="result"></tbody>
 </table>
+</div>
+
+</div>
 
 </div>
 
 <script>
-
-// 🌙 主題切換
 function toggleTheme() {
   document.body.classList.toggle("dark");
-  localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+  localStorage.setItem("theme",
+    document.body.classList.contains("dark") ? "dark" : "light");
 }
 
-// 讀取主題
 if (localStorage.getItem("theme") === "dark") {
   document.body.classList.add("dark");
 }
 
-// 稅率
 function getTax(type) {
   if (type === "etf") return 0.001;
   if (type === "day") return 0.0015;
@@ -182,7 +227,6 @@ function calculate() {
     tbody.appendChild(tr);
   }
 }
-
 </script>
 
 </body>
