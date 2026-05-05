@@ -3,29 +3,44 @@
 <head>
 <meta charset="UTF-8">
 <title>股票損益計算機</title>
+
 <style>
+:root {
+  --bg: #f5f6fa;
+  --card: white;
+  --text: #222;
+  --input: #fff;
+}
+
+.dark {
+  --bg: #1e1e1e;
+  --card: #2b2b2b;
+  --text: #eee;
+  --input: #3a3a3a;
+}
+
 body {
   font-family: Arial;
-  background: #f5f6fa;
+  background: var(--bg);
+  color: var(--text);
   padding: 20px;
 }
 
 .container {
   max-width: 900px;
   margin: auto;
-  background: white;
+  background: var(--card);
   padding: 20px;
   border-radius: 10px;
-}
-
-h2 {
-  margin-bottom: 20px;
 }
 
 input, select {
   padding: 8px;
   margin: 5px 0;
   width: 100%;
+  background: var(--input);
+  color: var(--text);
+  border: 1px solid #ccc;
 }
 
 button {
@@ -38,6 +53,11 @@ button {
   margin-top: 10px;
 }
 
+.toggle-btn {
+  margin-bottom: 10px;
+  background: #444;
+}
+
 table {
   width: 100%;
   margin-top: 20px;
@@ -45,31 +65,36 @@ table {
 }
 
 td, th {
-  border: 1px solid #ddd;
+  border: 1px solid #aaa;
   padding: 8px;
   text-align: center;
 }
 
 .profit { color: red; }
-.loss { color: green; }
+.loss { color: #00c853; }
 
 .highlight {
   background: yellow;
+  color: black;
 }
 </style>
 </head>
 
 <body>
+
 <div class="container">
+
+<button class="toggle-btn" onclick="toggleTheme()">🌙 切換深色 / 淺色</button>
+
 <h2>📊 股票損益計算機</h2>
 
 <label>買入價格</label>
-<input id="buy" value="982">
+<input id="buy" value="1000">
 
 <label>股數</label>
 <input id="qty" value="1000">
 
-<label>手續費折數 (例如 0.28)</label>
+<label>手續費折數</label>
 <input id="discount" value="0.28">
 
 <label>交易類型</label>
@@ -79,9 +104,12 @@ td, th {
   <option value="day">當沖 (0.15%)</option>
 </select>
 
+<label>顯示筆數（例如 20）</label>
+<input id="range" value="20">
+
 <button onclick="calculate()">計算</button>
 
-<table id="resultTable">
+<table>
 <thead>
 <tr>
 <th>賣出價</th>
@@ -89,13 +117,26 @@ td, th {
 <th>報酬率</th>
 </tr>
 </thead>
-<tbody></tbody>
+<tbody id="result"></tbody>
 </table>
 
 </div>
 
 <script>
-function getTaxRate(type) {
+
+// 🌙 主題切換
+function toggleTheme() {
+  document.body.classList.toggle("dark");
+  localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+}
+
+// 讀取主題
+if (localStorage.getItem("theme") === "dark") {
+  document.body.classList.add("dark");
+}
+
+// 稅率
+function getTax(type) {
   if (type === "etf") return 0.001;
   if (type === "day") return 0.0015;
   return 0.003;
@@ -106,44 +147,42 @@ function calculate() {
   let qty = parseInt(document.getElementById("qty").value);
   let discount = parseFloat(document.getElementById("discount").value);
   let type = document.getElementById("type").value;
+  let range = parseInt(document.getElementById("range").value);
 
-  let feeRate = 0.001425 * discount;
-  let taxRate = getTaxRate(type);
+  let fee = 0.001425 * discount;
+  let tax = getTax(type);
 
-  let table = document.querySelector("#resultTable tbody");
-  table.innerHTML = "";
+  let tbody = document.getElementById("result");
+  tbody.innerHTML = "";
 
-  let breakevenFound = false;
+  let found = false;
 
-  for (let i = -5; i <= 5; i++) {
+  for (let i = -range; i <= range; i++) {
     let sell = buy + i;
 
-    let buyCost = buy * qty * (1 + feeRate);
-    let sellIncome = sell * qty * (1 - feeRate - taxRate);
+    let buyCost = buy * qty * (1 + fee);
+    let sellIncome = sell * qty * (1 - fee - tax);
 
     let profit = sellIncome - buyCost;
     let roi = (profit / buyCost) * 100;
 
-    let row = document.createElement("tr");
+    let tr = document.createElement("tr");
 
-    if (!breakevenFound && profit >= 0) {
-      row.classList.add("highlight");
-      breakevenFound = true;
+    if (!found && profit >= 0) {
+      tr.classList.add("highlight");
+      found = true;
     }
 
-    row.innerHTML = `
+    tr.innerHTML = `
       <td>${sell.toFixed(1)}</td>
-      <td class="${profit >= 0 ? 'profit' : 'loss'}">
-        ${profit.toFixed(0)} 元
-      </td>
-      <td class="${profit >= 0 ? 'profit' : 'loss'}">
-        ${roi.toFixed(2)}%
-      </td>
+      <td class="${profit >= 0 ? 'profit' : 'loss'}">${profit.toFixed(0)} 元</td>
+      <td class="${profit >= 0 ? 'profit' : 'loss'}">${roi.toFixed(2)}%</td>
     `;
 
-    table.appendChild(row);
+    tbody.appendChild(tr);
   }
 }
+
 </script>
 
 </body>
