@@ -1,0 +1,152 @@
+<script>
+let chart;
+
+// 🌙 主題
+function toggleTheme(){
+  document.body.classList.toggle("dark");
+  localStorage.setItem("theme",
+    document.body.classList.contains("dark")?"dark":"light");
+}
+if(localStorage.getItem("theme")==="dark"){
+  document.body.classList.add("dark");
+}
+
+// 📊 稅率
+function getTax(type){
+  if(type==="etf") return 0.001;
+  if(type==="day") return 0.0015;
+  return 0.003;
+}
+
+// 🔥 核心：券商級計算
+function calcReal(buy, sell, qty, feeRate, taxRate){
+
+  // 買手續費
+  let feeBuy = Math.round(buy * qty * feeRate);
+  if(feeBuy < 20) feeBuy = 20;
+
+  // 賣手續費
+  let feeSell = Math.round(sell * qty * feeRate);
+  if(feeSell < 20) feeSell = 20;
+
+  // 交易稅（只算賣）
+  let tax = Math.round(sell * qty * taxRate);
+
+  let buyCost = buy * qty + feeBuy;
+  let sellIncome = sell * qty - feeSell - tax;
+
+  let profit = sellIncome - buyCost;
+  let roi = profit / buyCost * 100;
+
+  return {profit, roi, feeBuy, feeSell, tax};
+}
+
+// ⚡ 即時計算
+document.querySelectorAll("input,select").forEach(el=>{
+  el.addEventListener("input", calculate);
+});
+
+function calculate(){
+
+  let buy=+buyInput.value||0;
+  let qty=+qtyInput.value||0;
+  let discount=+discountInput.value||0;
+  let type=typeSelect.value;
+  let range=+rangeInput.value||20;
+
+  let feeRate = 0.001425 * discount;
+  let taxRate = getTax(type);
+
+  let tbody=result;
+  tbody.innerHTML="";
+
+  let labels=[];
+  let profits=[];
+
+  let breakeven=null;
+
+  for(let i=-range;i<=range;i++){
+
+    let sell = buy + i;
+
+    let r = calcReal(buy, sell, qty, feeRate, taxRate);
+
+    labels.push(sell.toFixed(1));
+    profits.push(r.profit);
+
+    let tr=document.createElement("tr");
+
+    if(breakeven===null && r.profit>=0){
+      tr.classList.add("highlight");
+      breakeven=sell;
+    }
+
+    tr.innerHTML=`
+      <td>${sell.toFixed(1)}</td>
+      <td class="${r.profit>=0?'profit':'loss'}">${r.profit}</td>
+      <td class="${r.profit>=0?'profit':'loss'}">${r.roi.toFixed(2)}%</td>
+    `;
+
+    tbody.appendChild(tr);
+  }
+
+  // 🎯 不虧價
+  breakevenDiv.innerText = breakeven
+    ? "🎯 不虧價：" + breakeven.toFixed(2)
+    : "⚠ 無法打平";
+
+  // 📈 圖表
+  if(chart) chart.destroy();
+  chart = new Chart(chartCanvas, {
+    type:'line',
+    data:{
+      labels:labels,
+      datasets:[{
+        label:'損益',
+        data:profits,
+        tension:0.3
+      }]
+    }
+  });
+
+  // 💾 記憶
+  localStorage.setItem("data", JSON.stringify({
+    buy,qty,discount,type,range
+  }));
+
+  // 👉 額外顯示（重點）
+  let sampleSell = buy;
+  let detail = calcReal(buy, sampleSell, qty, feeRate, taxRate);
+
+  detailDiv.innerHTML = `
+    💰 買手續費：${detail.feeBuy} 元　
+    賣手續費：${detail.feeSell} 元　
+    交易稅：${detail.tax} 元
+  `;
+}
+
+// DOM
+let buyInput=document.getElementById("buy");
+let qtyInput=document.getElementById("qty");
+let discountInput=document.getElementById("discount");
+let typeSelect=document.getElementById("type");
+let rangeInput=document.getElementById("range");
+let result=document.getElementById("result");
+let breakevenDiv=document.getElementById("breakeven");
+let chartCanvas=document.getElementById("chart");
+
+// 👉 新增顯示區
+let detailDiv = document.createElement("div");
+detailDiv.style.marginTop="10px";
+breakevenDiv.after(detailDiv);
+
+// 載入
+let saved=JSON.parse(localStorage.getItem("data")||"{}");
+buyInput.value=saved.buy||1000;
+qtyInput.value=saved.qty||1000;
+discountInput.value=saved.discount||0.28;
+typeSelect.value=saved.type||"stock";
+rangeInput.value=saved.range||20;
+
+calculate();
+</script>
