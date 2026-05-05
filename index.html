@@ -3,117 +3,115 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>股票損益計算機</title>
+<title>股票損益計算機 Pro+</title>
 
 <style>
-:root {
-  --bg: #f5f6fa;
-  --card: white;
-  --text: #222;
-  --input: #fff;
+:root{
+  --bg:#0f172a;
+  --card:rgba(255,255,255,0.08);
+  --text:#e5e7eb;
+  --accent:#38bdf8;
 }
 
-.dark {
-  --bg: #1e1e1e;
-  --card: #2b2b2b;
-  --text: #eee;
-  --input: #3a3a3a;
+.light{
+  --bg:#f1f5f9;
+  --card:rgba(255,255,255,0.9);
+  --text:#111;
 }
 
-body {
-  font-family: Arial;
-  background: var(--bg);
-  color: var(--text);
-  margin: 0;
+/* 🌌 背景 */
+body{
+  margin:0;
+  font-family:Arial;
+  background:linear-gradient(135deg,#0f172a,#1e293b,#020617);
+  background-size:400% 400%;
+  animation:bgMove 12s ease infinite;
+  color:var(--text);
 }
 
-.container {
-  max-width: 900px;
-  margin: auto;
-  padding: 15px;
+@keyframes bgMove{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
 }
 
-.card {
-  background: var(--card);
-  padding: 15px;
-  border-radius: 10px;
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:15px;
 }
 
-h2 {
-  font-size: 22px;
+/* 🧊 卡片 */
+.card{
+  background:var(--card);
+  backdrop-filter: blur(12px);
+  border-radius:16px;
+  padding:16px;
+  margin-bottom:15px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.3);
 }
 
-input, select {
-  padding: 12px;
-  margin: 6px 0;
-  width: 100%;
-  background: var(--input);
-  color: var(--text);
-  border: 1px solid #ccc;
-  border-radius: 6px;
+/* 輸入 */
+input,select{
+  width:100%;
+  padding:12px;
+  margin:6px 0;
+  border:none;
+  border-radius:8px;
+  background:rgba(255,255,255,0.1);
+  color:var(--text);
 }
 
-button {
-  padding: 14px;
-  background: #2f80ed;
-  color: white;
-  border: none;
-  width: 100%;
-  margin-top: 10px;
-  border-radius: 6px;
-  font-size: 16px;
+/* 按鈕 */
+button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  background:linear-gradient(45deg,#38bdf8,#6366f1);
+  color:#fff;
+  font-weight:bold;
+  cursor:pointer;
 }
 
-.toggle-btn {
-  background: #444;
-  margin-bottom: 10px;
+.toggle{
+  background:#334155;
+  margin-bottom:10px;
 }
 
 /* 表格 */
-.table-wrap {
-  overflow-x: auto;
+.table-wrap{overflow:auto;}
+
+table{
+  width:100%;
+  border-collapse:collapse;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 400px;
+th,td{
+  padding:10px;
+  text-align:center;
+  border-bottom:1px solid rgba(255,255,255,0.1);
 }
 
-td, th {
-  border: 1px solid #aaa;
-  padding: 8px;
-  text-align: center;
-  font-size: 14px;
+/* 顏色 */
+.profit{color:#ff4d4f;}
+.loss{color:#22c55e;}
+
+.highlight{
+  background:rgba(255,255,0,0.2);
 }
 
-.profit { color: red; }
-.loss { color: #00c853; }
-
-.highlight {
-  background: yellow;
-  color: black;
+/* 不虧價 */
+.breakeven{
+  font-size:18px;
+  font-weight:bold;
+  margin-top:10px;
+  color:#facc15;
 }
 
-/* 📱 手機優化 */
-@media (max-width: 600px) {
-
-  h2 {
-    font-size: 18px;
-  }
-
-  input, select {
-    font-size: 16px;
-  }
-
-  button {
-    font-size: 18px;
-  }
-
-  td, th {
-    font-size: 13px;
-    padding: 6px;
-  }
+/* 手機優化 */
+@media(max-width:600px){
+  th,td{font-size:12px;padding:6px;}
 }
 </style>
 </head>
@@ -124,36 +122,25 @@ td, th {
 
 <div class="card">
 
-<button class="toggle-btn" onclick="toggleTheme()">🌙 深色 / 淺色</button>
+<button class="toggle" onclick="toggleTheme()">🌙 主題切換</button>
 
-<h2>📊 股票損益計算機</h2>
+<h2>📊 股票損益計算機 Pro+</h2>
 
-<label>買入價格</label>
-<input id="buy" value="1000">
-
-<label>股數</label>
-<input id="qty" value="1000">
-
-<label>手續費折數</label>
-<input id="discount" value="0.28">
-
-<label>交易類型</label>
+<input id="buy" placeholder="買入價格">
+<input id="qty" placeholder="股數">
+<input id="discount" placeholder="手續費折數 (0.28)">
 <select id="type">
-  <option value="stock">現股 (0.3%)</option>
-  <option value="etf">ETF (0.1%)</option>
-  <option value="day">當沖 (0.15%)</option>
+<option value="stock">現股 (0.3%)</option>
+<option value="etf">ETF (0.1%)</option>
+<option value="day">當沖 (0.15%)</option>
 </select>
+<input id="range" placeholder="顯示筆數 (20)">
 
-<label>顯示筆數</label>
-<input id="range" value="20">
-
-<button onclick="calculate()">計算</button>
+<div class="breakeven" id="breakeven"></div>
 
 </div>
 
-<div class="card" style="margin-top:15px;">
-
-<div class="table-wrap">
+<div class="card table-wrap">
 <table>
 <thead>
 <tr>
@@ -168,65 +155,95 @@ td, th {
 
 </div>
 
-</div>
-
 <script>
-function toggleTheme() {
-  document.body.classList.toggle("dark");
+// 🌙 主題
+function toggleTheme(){
+  document.body.classList.toggle("light");
   localStorage.setItem("theme",
-    document.body.classList.contains("dark") ? "dark" : "light");
+    document.body.classList.contains("light")?"light":"dark");
+}
+if(localStorage.getItem("theme")==="light"){
+  document.body.classList.add("light");
 }
 
-if (localStorage.getItem("theme") === "dark") {
-  document.body.classList.add("dark");
-}
-
-function getTax(type) {
-  if (type === "etf") return 0.001;
-  if (type === "day") return 0.0015;
+// 稅
+function getTax(t){
+  if(t==="etf") return 0.001;
+  if(t==="day") return 0.0015;
   return 0.003;
 }
 
-function calculate() {
-  let buy = parseFloat(document.getElementById("buy").value);
-  let qty = parseInt(document.getElementById("qty").value);
-  let discount = parseFloat(document.getElementById("discount").value);
-  let type = document.getElementById("type").value;
-  let range = parseInt(document.getElementById("range").value);
+// 即時計算
+document.querySelectorAll("input,select").forEach(el=>{
+  el.addEventListener("input", calculate);
+});
 
-  let fee = 0.001425 * discount;
-  let tax = getTax(type);
+function calculate(){
+  let buy=+buyInput.value||0;
+  let qty=+qtyInput.value||0;
+  let discount=+discountInput.value||0;
+  let type=typeSelect.value;
+  let range=+rangeInput.value||20;
 
-  let tbody = document.getElementById("result");
-  tbody.innerHTML = "";
+  let fee=0.001425*discount;
+  let tax=getTax(type);
 
-  let found = false;
+  result.innerHTML="";
+  let breakeven=null;
 
-  for (let i = -range; i <= range; i++) {
-    let sell = buy + i;
+  for(let i=-range;i<=range;i++){
+    let sell=buy+i;
 
-    let buyCost = buy * qty * (1 + fee);
-    let sellIncome = sell * qty * (1 - fee - tax);
+    let cost=buy*qty*(1+fee);
+    let income=sell*qty*(1-fee-tax);
 
-    let profit = sellIncome - buyCost;
-    let roi = (profit / buyCost) * 100;
+    let p=income-cost;
+    let roi=p/cost*100;
 
-    let tr = document.createElement("tr");
+    let tr=document.createElement("tr");
 
-    if (!found && profit >= 0) {
+    if(breakeven===null && p>=0){
       tr.classList.add("highlight");
-      found = true;
+      breakeven=sell;
     }
 
-    tr.innerHTML = `
+    tr.innerHTML=`
       <td>${sell.toFixed(1)}</td>
-      <td class="${profit >= 0 ? 'profit' : 'loss'}">${profit.toFixed(0)} 元</td>
-      <td class="${profit >= 0 ? 'profit' : 'loss'}">${roi.toFixed(2)}%</td>
+      <td class="${p>=0?'profit':'loss'}">${p.toFixed(0)}</td>
+      <td class="${p>=0?'profit':'loss'}">${roi.toFixed(2)}%</td>
     `;
 
-    tbody.appendChild(tr);
+    result.appendChild(tr);
   }
+
+  breakevenDiv.innerText = breakeven
+    ? "🎯 不虧價：" + breakeven.toFixed(2)
+    : "⚠ 無法打平";
+
+  // 儲存
+  localStorage.setItem("data", JSON.stringify({
+    buy,qty,discount,type,range
+  }));
 }
+
+// DOM
+let buyInput=document.getElementById("buy");
+let qtyInput=document.getElementById("qty");
+let discountInput=document.getElementById("discount");
+let typeSelect=document.getElementById("type");
+let rangeInput=document.getElementById("range");
+let result=document.getElementById("result");
+let breakevenDiv=document.getElementById("breakeven");
+
+// 載入
+let saved=JSON.parse(localStorage.getItem("data")||"{}");
+buyInput.value=saved.buy||1000;
+qtyInput.value=saved.qty||1000;
+discountInput.value=saved.discount||0.28;
+typeSelect.value=saved.type||"stock";
+rangeInput.value=saved.range||20;
+
+calculate();
 </script>
 
 </body>
