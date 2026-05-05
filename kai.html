@@ -3,9 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>股票損益計算機 Pro</title>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<title>股票損益計算機（券商精準版）</title>
 
 <style>
 :root {
@@ -26,20 +24,19 @@ body { margin:0; font-family:Arial; background:var(--bg); color:var(--text); }
   margin-bottom:15px;
 }
 
+label {
+  font-size:14px;
+  margin-top:10px;
+  display:block;
+}
+
 input, select {
-  width:100%; padding:12px; margin:6px 0;
+  width:100%; padding:12px; margin:4px 0 8px 0;
   background:var(--input); color:var(--text);
   border:1px solid #ccc; border-radius:6px;
 }
 
-button {
-  padding:12px; width:100%;
-  background:#2f80ed; color:#fff;
-  border:none; border-radius:6px;
-}
-
 .highlight { background:yellow; color:black; }
-
 .profit { color:red; }
 .loss { color:#00c853; }
 
@@ -65,9 +62,12 @@ td,th {
 .toggle-btn {
   background:#444;
   margin-bottom:10px;
+  padding:10px;
+  width:100%;
+  color:white;
+  border:none;
+  border-radius:6px;
 }
-
-canvas { margin-top:10px; }
 </style>
 </head>
 
@@ -79,25 +79,30 @@ canvas { margin-top:10px; }
 
 <button class="toggle-btn" onclick="toggleTheme()">🌙 深色 / 淺色</button>
 
-<h2>📊 股票損益計算機 Pro</h2>
+<h2>📊 股票損益計算機（券商精準版）</h2>
 
-<input id="buy" placeholder="買入價格">
-<input id="qty" placeholder="股數">
-<input id="discount" placeholder="手續費折數 (0.28)">
+<label>買入價格</label>
+<input id="buy" type="number">
+
+<label>股數</label>
+<input id="qty" type="number">
+
+<label>手續費折數</label>
+<input id="discount" type="number" step="0.01">
+
+<label>交易類型</label>
 <select id="type">
 <option value="stock">現股 (0.3%)</option>
 <option value="etf">ETF (0.1%)</option>
 <option value="day">當沖 (0.15%)</option>
 </select>
 
-<input id="range" placeholder="顯示筆數 (20)">
+<label>顯示筆數</label>
+<input id="range" type="number">
 
 <div class="big" id="breakeven"></div>
+<div id="detail"></div>
 
-</div>
-
-<div class="card">
-<canvas id="chart"></canvas>
 </div>
 
 <div class="card table-wrap">
@@ -116,8 +121,8 @@ canvas { margin-top:10px; }
 </div>
 
 <script>
-let chart;
 
+// 🌙 主題
 function toggleTheme(){
   document.body.classList.toggle("dark");
   localStorage.setItem("theme",
@@ -127,13 +132,34 @@ if(localStorage.getItem("theme")==="dark"){
   document.body.classList.add("dark");
 }
 
-function getTax(t){
-  if(t==="etf") return 0.001;
-  if(t==="day") return 0.0015;
+// 稅率
+function getTax(type){
+  if(type==="etf") return 0.001;
+  if(type==="day") return 0.0015;
   return 0.003;
 }
 
-// 🔥 即時計算
+// 🔥 券商精準計算
+function calcReal(buy, sell, qty, feeRate, taxRate){
+
+  let feeBuy = Math.round(buy * qty * feeRate);
+  if(feeBuy < 20) feeBuy = 20;
+
+  let feeSell = Math.round(sell * qty * feeRate);
+  if(feeSell < 20) feeSell = 20;
+
+  let tax = Math.round(sell * qty * taxRate);
+
+  let buyCost = buy * qty + feeBuy;
+  let sellIncome = sell * qty - feeSell - tax;
+
+  let profit = sellIncome - buyCost;
+  let roi = profit / buyCost * 100;
+
+  return {profit, roi, feeBuy, feeSell, tax};
+}
+
+// 即時計算
 document.querySelectorAll("input,select").forEach(el=>{
   el.addEventListener("input", calculate);
 });
@@ -146,71 +172,53 @@ function calculate(){
   let type=typeSelect.value;
   let range=+rangeInput.value||20;
 
-  let fee=0.001425*discount;
-  let tax=getTax(type);
+  let feeRate = 0.001425 * discount;
+  let taxRate = getTax(type);
 
-  let tbody=result;
-  tbody.innerHTML="";
-
-  let labels=[];
-  let profits=[];
+  result.innerHTML="";
 
   let breakeven=null;
 
   for(let i=-range;i<=range;i++){
-    let sell=buy+i;
 
-    let buyCost=buy*qty*(1+fee);
-    let sellIncome=sell*qty*(1-fee-tax);
+    let sell = buy + i;
 
-    let p=sellIncome-buyCost;
-    let roi=p/buyCost*100;
-
-    labels.push(sell.toFixed(1));
-    profits.push(p);
+    let r = calcReal(buy, sell, qty, feeRate, taxRate);
 
     let tr=document.createElement("tr");
 
-    if(breakeven===null && p>=0){
+    if(breakeven===null && r.profit>=0){
       tr.classList.add("highlight");
       breakeven=sell;
     }
 
     tr.innerHTML=`
-    <td>${sell.toFixed(1)}</td>
-    <td class="${p>=0?'profit':'loss'}">${p.toFixed(0)}</td>
-    <td class="${p>=0?'profit':'loss'}">${roi.toFixed(2)}%</td>
+      <td>${sell.toFixed(1)}</td>
+      <td class="${r.profit>=0?'profit':'loss'}">${r.profit}</td>
+      <td class="${r.profit>=0?'profit':'loss'}">${r.roi.toFixed(2)}%</td>
     `;
 
-    tbody.appendChild(tr);
+    result.appendChild(tr);
   }
 
-  // 🎯 不虧價
   breakevenDiv.innerText = breakeven
     ? "🎯 不虧價：" + breakeven.toFixed(2)
     : "⚠ 無法打平";
 
-  // 📈 畫圖
-  if(chart) chart.destroy();
-  chart = new Chart(chartCanvas, {
-    type:'line',
-    data:{
-      labels:labels,
-      datasets:[{
-        label:'損益',
-        data:profits,
-        tension:0.3
-      }]
-    }
-  });
+  let detail = calcReal(buy, buy, qty, feeRate, taxRate);
 
-  // 💾 記住
+  detailDiv.innerHTML = `
+    💰 買手續費：${detail.feeBuy} 元　
+    賣手續費：${detail.feeSell} 元　
+    交易稅：${detail.tax} 元
+  `;
+
   localStorage.setItem("data", JSON.stringify({
     buy,qty,discount,type,range
   }));
 }
 
-// DOM 快取
+// DOM
 let buyInput=document.getElementById("buy");
 let qtyInput=document.getElementById("qty");
 let discountInput=document.getElementById("discount");
@@ -218,15 +226,15 @@ let typeSelect=document.getElementById("type");
 let rangeInput=document.getElementById("range");
 let result=document.getElementById("result");
 let breakevenDiv=document.getElementById("breakeven");
-let chartCanvas=document.getElementById("chart");
+let detailDiv=document.getElementById("detail");
 
-// 載入資料
+// 載入
 let saved=JSON.parse(localStorage.getItem("data")||"{}");
-buyInput.value=saved.buy||1000;
-qtyInput.value=saved.qty||1000;
-discountInput.value=saved.discount||0.28;
-typeSelect.value=saved.type||"stock";
-rangeInput.value=saved.range||20;
+buyInput.value=saved.buy ?? 1000;
+qtyInput.value=saved.qty ?? 1000;
+discountInput.value=saved.discount ?? 0.28;
+typeSelect.value=saved.type ?? "stock";
+rangeInput.value=saved.range ?? 20;
 
 calculate();
 </script>
